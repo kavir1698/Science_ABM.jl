@@ -1,4 +1,4 @@
-name = "Science_ABM"
+name = "Science_ABM.jl"
 uuid = "7ea215e1-2ffd-4169-90c2-825315265813"
 authors = ["Ali R. Vahdati <arv.kavir@gmail.com>, Carlos Melian"]
 version = "0.1.0"
