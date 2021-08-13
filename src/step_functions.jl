@@ -1,12 +1,15 @@
 
-"
-    choose_problem(researcher::Researcher, current_time::Int, K=0, max_years=10)
-
+"""
 Choose a random number from a given distribution as the predictability of a problem.
 K: importance of more general information in producing more knowledge. Better be an integer.
 max_years: max years a project can take to finish.
-"
-function choose_problem(researcher::Researcher, current_time::Int, K=0, max_years=10)
+"""
+function choose_problem(researcher::Researcher, model)
+
+	vurrent_time = model.properties["time"]
+	K = model.properties["K"]
+	max_years = model.properties["max_years"]
+	current_time = model.properties["time"]
 	success_probability = researcher.risk_taking
   complexity = 0.0  # not incorporated into the model yet. Can determine time_to_finish. TODO
 	time_to_finish = researcher.generality * max_years
@@ -34,15 +37,10 @@ function pushproblem!(researcher::Researcher, problem::Problem)
 	push!(researcher.publication_success, missing)
 end
 
-
 "
-    update_researcher!(researcher::Researcher, K)
-
 updates researchers profile by one time step (e.g. year)
-
-K: importance of longer projects. from starts from zero. use integers.
 "
-function update_researcher!(researcher::Researcher, K)
+function update_researcher!(researcher::Researcher, model)
 	researcher.experience += 1
 	if researcher.grant > 0
 		researcher.grant -= 1
@@ -61,17 +59,22 @@ function update_researcher!(researcher::Researcher, K)
 	for problem_index in finished_problems
 		publish!(researcher, problem_index)
 	end
-	add_citations!(researcher, K)
+	add_citations!(researcher, model)
+end
+
+
+function update_researcher!(model::ABM)
+	for researcher in values(model.agents)
+		update_researcher!(researcher, model)
+	end
 end
 
 
 """
-		add_citations!(researcher::Researcher, K)
-		
 Adds citations to previous papers
-K: importance of longer projects. from starts from zero. use integers.
 """
-function add_citations!(researcher::Researcher, K)
+function add_citations!(researcher::Researcher, model::ABM)
+	K = model.properties["K"]
 	published = findall(a -> !ismissing(a) && a==true, researcher.publication_success)
 	for paperind in published
 		if K == 0
@@ -125,7 +128,6 @@ function information(researchers::Array{Researcher})
 end
 
 
-
 "
     publish!(researcher::Researcher, problem_index::Int64)
 
@@ -142,35 +144,31 @@ end
 
 
 """
-    get_grant!(researchers::Array{Researcher}, available_grants::Int64, K::Real, max_years::Real, A, B, C, current_time)
-
 Years of research grant that researchers can receive.
 """
-function get_grant!(researchers::Array{Researcher}, available_grants::Int64, K::Real, max_years::Real, A, B, C, current_time)
-	nresearchers = length(researchers)
-	problems = Array{Problem}(undef, nresearchers)  # let the researchers choose a problem first. Then, give them grants given their problems. If any one gets a grant, then the problem will be included into its history. 
-	for r in 1:nresearchers
-		problems[r] = choose_problem(researchers[r], current_time, K, max_years)
-	end
-
+function get_grant!(model::ABM)
+	nresearchers = nagents(model)
+	max_years  = model.properties["max_years"]
+	ids = collect(allids(model))
 	scores = Array{Float64}(undef, nresearchers)
-	for r in 1:nresearchers
-		scores[r] = get_score(researchers[r], A, B, C)
+	counter = 1
+	for id in ids
+		scores[counter] = get_score(model[id], model)
+		counter += 1
 	end
 
-	# priorities = sample(1:nresearchers, Weights(scores), nresearchers, replace=false, ordered=false)  # commenting this out because I think this function introduces too much noise, as the score differences can be very small.
 	priorities = sortperm(scores, rev=true)
 
 	index = 1
-	while available_grants > 0  && index <= nresearchers
-		researcher_index = priorities[index]
-		researcher = researchers[researcher_index]
-		problem = problems[researcher_index]
+	while model.properties["max_grants"] > 0  && index ≤ nresearchers
+		resid = ids[priorities[index]]
+		researcher = model[resid]
+		problem = choose_problem(researcher, model)
 		asked_years = problem.time_to_finish
-		if available_grants >= asked_years && (asked_years+researcher.grant) <= max_years
+		if model.properties["max_grants"] >= asked_years && (asked_years+researcher.grant) <= max_years
 			researcher.grant += asked_years
 			push!(researcher.received_grants, asked_years)
-			available_grants -= asked_years
+			model.properties["max_grants"] -= asked_years
 
 			# add the problem to the researchers history
 			pushproblem!(researcher, problem)
@@ -178,24 +176,24 @@ function get_grant!(researchers::Array{Researcher}, available_grants::Int64, K::
 		end
 		index += 1
 	end
-	if available_grants == 0 && index < nresearchers
-		for ri in index:nresearchers
-			researcher_index = priorities[ri]
-			researcher = researchers[researcher_index]
-			push!(researcher.received_grants, 0.0)
+	if model.properties["max_grants"] == 0 && index < nresearchers
+		for ri in ids[index:nresearchers]
+			resid = ids[priorities[index]]
+			push!(model[resid].received_grants, 0.0)
 		end
 	end
 end
 
 
 """
-     mutate_researcher!(researcher::Researcher; mutation_rate::Float64=0.01, risk_range::Float64=0.1, max_years::Int64=5)
-
 Change a researchers risk taking personality.
 """
-function mutate_researcher!(researcher::Researcher; mutation_rate::Float64=0.01, risk_range::Float64=0.1, max_years::Int64=5)
-	risk_mutation = wsample([true, false], [mutation_rate, 1-mutation_rate]) 
-	years_mutation = wsample([true, false], [mutation_rate, 1-mutation_rate]) 
+function mutate_researcher!(researcher::Researcher, model::ABM)
+	μ = model.properties["mutation_rate"]
+	risk_range  = model.properties["risk_range"]
+	max_years  = model.properties["max_years"]
+	risk_mutation = wsample([true, false], [μ, 1-μ]) 
+	years_mutation = wsample([true, false], [μ, 1-μ]) 
 	if risk_mutation
 		lbound = researcher.risk_taking-risk_range
 		ubound = researcher.risk_taking+risk_range
@@ -218,22 +216,12 @@ function mutate_researcher!(researcher::Researcher; mutation_rate::Float64=0.01,
 end
 
 """
-    train_students(researchers::Researcher, min_experience, mutation_rate, average_students, risk_range, max_years)
-
 researchers with a min experience can train students.
-
-# Parameters
-
-* min_experience: minimum experience after which a researcher can have students
-* mutation_rate: probability of the student being mutated from the professor. Mutation happens both risk aversion and generality of the student.
-* average_students: number of students per professor taken from a Poisson distribution
-* risk_range: the range about the professors risk averation from which the student will receive a value.
-* max_years: max years a project can take. the years of research is chosen randomly from 1 to this max number.  
 """
-function train_students(researcher::Researcher, min_experience, mutation_rate, average_students, risk_range, max_years)
+function train_students!(researcher::Researcher, model::ABM)
   nstudents = 0
-  if researcher.experience > min_experience
-    n_students_dist = Poisson(average_students)
+  if researcher.experience > model.properties["min_prof_exp"]
+    n_students_dist = Poisson(model.properties["average_students"])
     nstudents = rand(n_students_dist)
   else
     return
@@ -242,54 +230,22 @@ function train_students(researcher::Researcher, min_experience, mutation_rate, a
     return
   end
   for nstudent in 1:nstudents
-    student = Researcher(researcher.risk_taking, researcher.generality)
-    mutate_researcher!(student, mutation_rate=mutation_rate, risk_range=risk_range, max_years=max_years)
-    add_agent!(model, student) # TODO: check
+    student = Researcher(nextid(model), researcher.risk_taking, researcher.generality)
+    mutate_researcher!(student, model)
+    add_agent!(student, model)
   end
 end
 
-function train_students(researchers::Array{Researcher}, min_experience, mutation_rate, average_students, risk_range, max_years)
-  for researcher in researchers
-    train_students(researcher, min_experience, mutation_rate, average_students, risk_range, max_years)
+function train_students!(model::ABM)
+  for researcher in values(model.agents)
+    train_students!(researcher, model)
   end
-end
-
-
-"""
-    exclude_unproductive(researchers::Array{Researcher}, available_grants::Real, A, B, C, min_prof_exp)
-
-Only keep the top n researchers each generation, where n=available grant.
-Researchers are ranked by the `get_score` function. Excludes those with lowest scores who do not have any ongoing grant.
-"""
-function exclude_unproductive(researchers::Array{Researcher}, available_grants::Real, A, B, C, min_prof_exp)
-	# only exclude those with lowest scores who do not have any ongoing grant.
-	need_grants = findall(a -> a.grant == 0 && a.experience >= min_prof_exp, researchers)
-	need_grants_len = length(need_grants)
-	popsize = length(researchers)
-	
-	if need_grants_len == 0 || popsize < available_grants || available_grants > need_grants_len
-		return researchers
-	end
-	
-	have_grants = findall(a -> a.grant > 0, researchers)
-	scores = Array{Float64}(undef, 0)
-	# for researcher in researchers
-	for resid in need_grants
-		researcher = researchers[resid]
-		score  = get_score(researcher, A, B, C)
-		push!(scores, score)
-	end
-	sorted_researchers = sortperm(scores, rev=true)
-	chosen_researchers = (1:popsize)[need_grants][sorted_researchers][1:available_grants]
-	allres = researchers[vcat(have_grants, chosen_researchers)]
-
-	return allres
 end
 
 """
     knowledge_output(researcher::Researcher)
 
-knowledge output of the researcher given the problems it has worked on and their publication success.
+knowledge output of the researcher given the problems it has worked on and their publication success. TODO: unused.
 """
 function knowledge_output(researcher::Researcher)
 	produced_knowledge = zeros(Float64, length(researcher.problem_history))
@@ -323,11 +279,12 @@ end
 
 
 """
-    get_score(researcher::Researcher, A, B, C)
-
 A general function for scoring researchers
 """
-function get_score(researcher::Researcher, A, B, C)
+function get_score(researcher::Researcher, model::ABM)
+	A = model.properties["A"]
+	B = model.properties["B"]
+	C = model.properties["C"]
 	pubs = findall(a -> !ismissing(a) && a==true, researcher.publication_success)
 	n_pubs = length(pubs)
 	score = 1e-6
@@ -341,15 +298,68 @@ function get_score(researcher::Researcher, A, B, C)
 	return score
 end
 
-"""
-    retire_researchers!(researchers, max_exp)
+function retire!(researcher::Researcher, model::ABM)
+	if researcher.experience ≥ model.properties["max_exp"]
+		kill_agent!(researcher, model)
+	end
+end
 
-retire researchers who have max_exp experience.
-"""
-function retire_researchers!(researchers, max_exp)
-	for index in length(researchers):-1:1  # reverse because splice shifts everything to the left after removing an element.
-		if researchers[index].experience == max_exp
-			splice!(researchers, index)
+function retire!(model::ABM)
+	for researcher in values(model.agents)
+		retire!(researcher, model)
+	end
+end
+
+
+function needing_grants(model)
+	output = Int[]
+	for (id, agent) in model.agents
+		if agent.grant == 0 && agent.experience >= model.properties["min_prof_exp"]
+			push!(output, id)
 		end
+	end
+	return output
+end
+
+function having_grants(model)
+	output = Int[]
+	for (id, agent) in model.agents
+		if agent.grant > 0
+			push!(output, id)
+		end
+	end
+	return output
+end
+
+function researcher_scores(model, need_grants)
+	scores = Float64[]
+	for resid in need_grants
+		score  = get_score(model[resid], model)
+		push!(scores, score)
+	end
+	return scores
+end
+
+"""
+Only keep the top n researchers each generation, where n=available grant.
+Researchers are ranked by the `get_score` function. Excludes those with lowest scores who do not have any ongoing grant.
+"""
+function exclude_unproductive(model::ABM)
+	# only exclude those with lowest scores who do not have any ongoing grant.
+	need_grants = needing_grants(model)
+	need_grants_len = length(need_grants)
+	popsize = nagents(model)
+	available_grants = model.properties["max_grants"]
+
+	if need_grants_len == 0 || popsize < available_grants || available_grants > need_grants_len
+		return
+	end
+	
+	have_grants = having_grants(model)
+	scores = researcher_scores(model, need_grants)
+	sorted_researchers = sortperm(scores, rev=true)
+	to_die = need_grants[sorted_researchers][available_grants+1:end]
+	for id in to_die
+		kill_agent(id, model)
 	end
 end
