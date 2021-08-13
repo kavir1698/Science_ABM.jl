@@ -243,22 +243,6 @@ function train_students!(model::ABM)
 end
 
 """
-    knowledge_output(researcher::Researcher)
-
-knowledge output of the researcher given the problems it has worked on and their publication success. TODO: unused.
-"""
-function knowledge_output(researcher::Researcher)
-	produced_knowledge = zeros(Float64, length(researcher.problem_history))
-	published_indices = findall(a-> !ismissing(a) && a == true, researcher.publication_success)
-	for index in published_indices
-		problem = researcher.problem_history[index]
-		produced_knowledge[index] = problem.information
-	end
-	return produced_knowledge    
-end
-
-
-"""
     get_hindex(researcher::Researcher)
 
 Calculates H-index for a researcher.

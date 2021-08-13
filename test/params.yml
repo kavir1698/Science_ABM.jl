@@ -1,6 +1,6 @@
 population_size: 10 # starting population size
 max_grants: 800 # equivalent to carrying capacity
-years: 400 # number of years to run the simulation
+years: 200 # number of years to run the simulation
 risk_taking_average: 0.5 # the average risk taking of the starting population
 generality_average: 0.5 # the average of generality of the starting populations
 min_prof_exp: 6 # min academic age before one can train students (have offsprings)
@@ -13,4 +13,6 @@ risk_range: 0.1 # a range around the risk taking of professors from which studen
 A: 10
 B: 0
 C: 0
-save_gens: [10,200,400]  # save the population at the given generations
+save_gens: [10,100,200]  # save the population at the given generations
+replicates: 1
+parallel: false

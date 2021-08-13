@@ -2,7 +2,9 @@ module Science_ABM
 
 using Agents
 using Distributions
+using Statistics
 using YAML
+
 
 include("types.jl")
 include("step_functions.jl")
