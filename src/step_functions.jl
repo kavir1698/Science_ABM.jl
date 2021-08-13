@@ -344,12 +344,12 @@ end
 Only keep the top n researchers each generation, where n=available grant.
 Researchers are ranked by the `get_score` function. Excludes those with lowest scores who do not have any ongoing grant.
 """
-function exclude_unproductive(model::ABM)
+function exclude_unproductive!(model::ABM)
 	# only exclude those with lowest scores who do not have any ongoing grant.
 	need_grants = needing_grants(model)
 	need_grants_len = length(need_grants)
 	popsize = nagents(model)
-	available_grants = model.properties["max_grants"]
+	available_grants = round(Int, model.properties["max_grants"])
 
 	if need_grants_len == 0 || popsize < available_grants || available_grants > need_grants_len
 		return
@@ -360,6 +360,6 @@ function exclude_unproductive(model::ABM)
 	sorted_researchers = sortperm(scores, rev=true)
 	to_die = need_grants[sorted_researchers][available_grants+1:end]
 	for id in to_die
-		kill_agent(id, model)
+		kill_agent!(id, model)
 	end
 end

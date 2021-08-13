@@ -23,7 +23,7 @@ end
 
 function model_step!(model::ABM)
 	retire!(model)
-	exclude_unproductive(model)
+	exclude_unproductive!(model)
 	get_grant!(model)
 	# gain experience, do one year of research, publish finished work, receive citations
 	update_researcher!(model)

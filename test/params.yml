@@ -1,17 +1,16 @@
 population_size: 10 # starting population size
-max_grants: 800 # equivalent to carryin capacity
+max_grants: 800 # equivalent to carrying capacity
 years: 400 # number of years to run the simulation
 risk_taking_average: 0.5 # the average risk taking of the starting population
 generality_average: 0.5 # the average of generality of the starting populations
 min_prof_exp: 6 # min academic age before one can train students (have offsprings)
 average_students: 2 # average number of students from a poisson distribution per professor per year
 max_exp: 30 # maximum age of after which the agent retires (dies)
-mutation_rate: 0.5 # probability that a student is different from the profesor
+mutation_rate: 0.5 # probability that a student is different from the professor
 K: 1.0 # a coefficient adding value to longer projects
-max_years: 6 # maximum number of years an agent can have fundings per time
+max_years: 6 # maximum number of years an agent can have funding per time
 risk_range: 0.1 # a range around the risk taking of professors from which students who are mutated will randomly receive a value
 A: 10
 B: 0
 C: 0
 save_gens: [10,200,400]  # save the population at the given generations
-plotting: false  # show the program plot figures and save summary stats?
