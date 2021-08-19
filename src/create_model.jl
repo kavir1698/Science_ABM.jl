@@ -17,6 +17,7 @@ function initialize_model(param_file::AbstractString)
 	
 	start_experienced_population(model, true)
 	model.properties["max_grants"] = d["max_grants"] # restore this param
+	model.properties["max_grants_org"] = deepcopy(d["max_grants"]) # restore this param
 
 	return model
 end
@@ -30,6 +31,8 @@ function model_step!(model::ABM)
 	train_students!(model)
 	# update time
 	model.properties["time"] += 1
+	# update the available grants per year
+	model.properties["max_grants"] = deepcopy(model.properties["max_grants_org"])
 end
 
 """
