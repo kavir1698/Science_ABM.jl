@@ -5,7 +5,6 @@ K: importance of more general information in producing more knowledge. Better be
 max_years: max years a project can take to finish.
 """
 function choose_problem(researcher::Researcher, model)
-
 	vurrent_time = model.properties["time"]
 	K = model.properties["K"]
 	max_years = model.properties["max_years"]
@@ -278,7 +277,7 @@ function get_score(researcher::Researcher, model::ABM)
 	citations = sum(researcher.publication_citations)
 	knowledge = sum([researcher.problem_history[i].information for i in pubs])
 	exp = researcher.experience
-	score += (n_pubs*A/(exp)) + ((citations*B/(exp))) + ((knowledge*C)/ (exp))
+	score += ((n_pubs*A) + (citations*B) + (knowledge*C)) / exp
 	return score
 end
 
@@ -339,10 +338,13 @@ function exclude_unproductive!(model::ABM)
 		return
 	end
 	
-	have_grants = having_grants(model)
+	# have_grants = having_grants(model)
 	scores = researcher_scores(model, need_grants)
-	sorted_researchers = sortperm(scores, rev=true)
-	to_die = need_grants[sorted_researchers][available_grants+1:end]
+	# kill with probability proportional to score
+	to_die_count = length(needing_grants) - available_grants
+	to_die = wsample(needing_grants, 1 .- scores, to_die_count, replace=false)
+	# sorted_researchers = sortperm(scores, rev=true)
+	# to_die = need_grants[sorted_researchers][available_grants+1:end]
 	for id in to_die
 		kill_agent!(id, model)
 	end
