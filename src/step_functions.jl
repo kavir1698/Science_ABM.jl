@@ -341,8 +341,8 @@ function exclude_unproductive!(model::ABM)
 	# have_grants = having_grants(model)
 	scores = researcher_scores(model, need_grants)
 	# kill with probability proportional to score
-	to_die_count = length(needing_grants) - available_grants
-	to_die = wsample(needing_grants, 1 .- scores, to_die_count, replace=false)
+	to_die_count = need_grants_len - available_grants
+	to_die = wsample(need_grants, 1 ./ scores, to_die_count, replace=false)
 	# sorted_researchers = sortperm(scores, rev=true)
 	# to_die = need_grants[sorted_researchers][available_grants+1:end]
 	for id in to_die
