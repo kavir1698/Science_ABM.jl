@@ -10,7 +10,6 @@
     @test isdefined(problem, :complexity)
     @inferred Science_ABM.choose_problem(model[1], model)
     @test length(fieldnames(typeof(problem))) ==  5
-    @test problem.time_to_finish <= 3
     @test problem.success_probability < 1
     @test problem.success_probability > 0
   end
