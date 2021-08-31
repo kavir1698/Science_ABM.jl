@@ -7,4 +7,17 @@ version = "0.1.0"
 Agents = "46ada45e-f475-11e8-01d0-f70cc89e6671"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[compat]
+Agents = "4"
+Distributions = "0.25"
+julia = "1.5"
+YAML = "0.4"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
