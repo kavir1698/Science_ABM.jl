@@ -1,0 +1,6 @@
+[deps]
+Agents = "46ada45e-f475-11e8-01d0-f70cc89e6671"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+EvoDynamics = "c8768967-421d-4a02-8523-37736f3dbe06"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Science_ABM = "7ea215e1-2ffd-4169-90c2-825315265813"
