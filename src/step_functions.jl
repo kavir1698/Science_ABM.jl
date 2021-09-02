@@ -156,11 +156,12 @@ function get_grant!(model::ABM)
 		counter += 1
 	end
 
-	priorities = sortperm(scores, rev=true)
+	# make probabilistic order
+	priorities = wsample(ids, scores, nresearchers, replace=false, ordered=false)
 
 	index = 1
 	while model.properties["max_grants"] > 0  && index ≤ nresearchers
-		resid = ids[priorities[index]]
+		resid = priorities[index]
 		researcher = model[resid]
 		problem = choose_problem(researcher, model)
 		asked_years = problem.time_to_finish
@@ -176,8 +177,7 @@ function get_grant!(model::ABM)
 		index += 1
 	end
 	if model.properties["max_grants"] == 0 && index < nresearchers
-		for ri in ids[index:nresearchers]
-			resid = ids[priorities[index]]
+		for resid in priorities[index:nresearchers]
 			push!(model[resid].received_grants, 0.0)
 		end
 	end
