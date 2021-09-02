@@ -22,6 +22,46 @@ function initialize_model(param_file::AbstractString)
 	return model
 end
 
+function initialize_model(;population_size, max_grants, years, risk_taking_average, generality_average, min_prof_exp, average_students, max_exp, mutation_rate, K, max_years, risk_range, A, B, C, save_gens, replicates)
+	
+	d = Dict(
+		"risk_taking_average" => risk_taking_average,
+		"generality_average" => generality_average,
+		"population_size" => population_size,
+		"max_grants" => max_grants,
+		"years" => years,
+		"min_prof_exp" => min_prof_exp,
+		"average_students" => average_students,
+		"max_exp" => max_exp,
+		"mutation_rate" => mutation_rate,
+		"K" => K,
+		"max_years" => max_years,
+		"risk_range" => risk_range,
+		"A" => A,
+		"B" => B,
+		"C" => C,
+		"save_gens" => save_gens,
+		"replicates" => replicates
+	)
+
+	r = Researcher(1, d["risk_taking_average"], d["generality_average"])
+	d["time"] = 1
+
+	model = ABM(typeof(r), properties=d, scheduler=Schedulers.randomly)
+	
+	
+	researchers = start_population(d["population_size"], d["risk_taking_average"], d["generality_average"])
+	for res in researchers
+		add_agent!(res, model)
+	end
+	
+	start_experienced_population(model, true)
+	model.properties["max_grants"] = d["max_grants"] # restore this param
+	model.properties["max_grants_org"] = deepcopy(d["max_grants"]) # restore this param
+
+	return model
+end
+
 function model_step!(model::ABM)
 	retire!(model)
 	exclude_unproductive!(model)
