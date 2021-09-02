@@ -16,7 +16,7 @@
 
   @testset "pushproblem! Tests" begin
     @test isdefined(Science_ABM, :pushproblem!) == true
-    @test length(model[1].problem_history) == 3
+    @test length(model[1].problem_history) == 2
     @test typeof(model[1].publication_success[1]) == Bool
   end
 end
