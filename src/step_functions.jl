@@ -81,7 +81,8 @@ function add_citations!(researcher::Researcher, model::ABM)
 		else
 			generality_importance = K * researcher.received_grants[paperind]
 		end
-		p = 1 - (researcher.problem_history[paperind].success_probability/generality_importance)
+		p1 = 1 - (researcher.problem_history[paperind].success_probability/generality_importance)
+		p = p1 < 0 ? 0.0 : p1 > 1 ? 1.0 : p1
 		n = round(Int64, 20 -(researcher.problem_history[paperind].start_time - researcher.problem_history[paperind].time_to_finish))  # this makes the number of citations a decreasing function of time until 20 years after which no citations will occur
 		if n <= 0
 			researcher.publication_citations[paperind] = 0
